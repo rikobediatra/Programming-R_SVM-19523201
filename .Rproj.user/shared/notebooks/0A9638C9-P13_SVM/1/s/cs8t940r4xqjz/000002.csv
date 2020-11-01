@@ -1,0 +1,1 @@
+"0","modelSVM1 <- svm(Diabetes ~ ., data = myData, kernel = ""linear"")"

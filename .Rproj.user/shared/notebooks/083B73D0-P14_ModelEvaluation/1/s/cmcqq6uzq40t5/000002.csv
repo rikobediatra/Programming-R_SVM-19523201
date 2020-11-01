@@ -1,0 +1,6 @@
+"0","#splitting data into training and test sets
+trainIndex <- createDataPartition(myData$X, p = 0.6)$Resample1
+"
+"2","Error in createDataPartition(myData$X, p = 0.6) : 
+  object 'myData' not found
+"

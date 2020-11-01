@@ -1,0 +1,2 @@
+"0","colnames(myData) <- c(""kadarGula"", ""konsumsiGula"", ""Diabetes"")"
+"0","head(myData)"

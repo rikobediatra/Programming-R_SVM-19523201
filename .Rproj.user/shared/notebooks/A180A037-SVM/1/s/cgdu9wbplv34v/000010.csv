@@ -1,0 +1,4 @@
+"0","prediksi <- predict(svm_linear, newdata = tes)
+"
+"2","Error in eval(predvars, data, env) : object 'pedigree' not found
+"

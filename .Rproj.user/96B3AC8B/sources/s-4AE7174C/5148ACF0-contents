@@ -1,0 +1,52 @@
+---
+title: "Linier Regression"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+head(longley)
+```
+$$Simple Linier Regression$$
+##mengambil dua variabel dari dataset longley
+```{r}
+new_dt <- subset(longley, select = c(Employed, GNP))
+new_dt
+```
+
+##fiting data set yang telah dipilih
+```{r}
+fit <- lm(Employed~GNP, data = longley)
+summary(fit)
+```
+
+##melihat visualisasi data
+```{r}
+library(predict3d)
+ggPredict(fit)
+  ```
+
+##melihat error dari data
+```{r}
+ggPredict(fit, xpos = 0.75, vjust = 1.5, show.error = TRUE)
+```
+
+$$Multiple Linier Regression$$
+##melakukan prediksi employed berdasarkan data GNP dan Populasi
+##melakukan fitting model dari data Longley
+```{r}
+fit1 <- lm(Employed~GNP+Population, data = longley) 
+summary(fit1)
+```
+
+##melihat prediksi
+```{r}
+ggPredict(fit1)
+```
+
+##melihat secara terpisah
+```{r}
+ggPredict(fit1, show.error = TRUE, facet.modx = TRUE)
+```
+

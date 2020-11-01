@@ -1,0 +1,6 @@
+"0","```r
+Integrate(x^2 * (cos(x^3+pi)) * (sin(x^3+pi)), x)
+
+```"
+"1","yacas_expression(-AntiDeriv(x, x^2 * sin(-2 * x^3 - 6.2831853071))/2)
+"

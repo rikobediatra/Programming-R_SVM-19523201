@@ -1,0 +1,1 @@
+"0","plot(myData$konsumsiGula,myData$kadarGula, col = ifelse(y==""1"", ""blue"", ""red""), pch = 19)"

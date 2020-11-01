@@ -1,0 +1,175 @@
+---
+title: "14. Tutorial Model Evaluation"
+output:
+  html_document:
+    df_print: paged
+    highlight: tango
+  pdf_document: default
+---
+
+Tutorial ini adalah bagian dari kuliah Fundamen Sains Data, Informatika UII. 
+
+Untuk menjalankan R script di bawah ini, silakan copy dan jalankan R script pada project yang rekan-rekan buat.
+
+Pada **Tutorial Model Evaluation** kita akan belajar beberapa hal, di antaranya:
+
+* Data Splitting
+* Cross Validation
+* Confussion Matrix
+* Underfitting
+* Overfitting
+
+### <span style="color: green;">**Data Splitting**</span>
+Pada saat membangun model klasifikasi (*classifier*), biasanya kita akan membagi (split) dataset kita menjadi:
+
+* Training set 
+* Testing set 
+
+Training set digunakan untuk membangun dan melatih *classifier*. Sedangkan testing set digunakan untuk melakukan assessment performansi model kita.
+
+Kita juga dapat menggunakan **validation set**, yang mana validation set ini akan kita gunakan untuk memvalidasi performansi model kita sebelum digunakan untuk menguji data baru/testing set. Namun untuk lebih sederhananya, pada tutorial ini kita hanya akan membagi dataset menjadi training set dan testing set saja.
+
+Ilustrasi contoh data splitting ini sebagai berikut:
+![Gambar 1. Data Splitting](https://blogseptia.files.wordpress.com/2020/10/datasplitting.png)
+
+Biasanya, porsi training set akan lebih besar dari porsi testing set. Porsi ini dapat kita ubah nilainya.
+
+Kita akan menggunakan sebuah data set (download di classroom). Letakkan file data set (hsbdemo2.txt) pada folder yang sama dengan di mana kita meletakkan R script. Load data set tersebut dengan script di bawah ini.
+
+```{r}
+myData <- read.csv(file="hsbdemo2.txt", header = TRUE)
+myData
+nrow(myData)
+```
+Pada data tersebut, banyaknya data yang kita miliki ada 200 data.
+
+Selanjutnya, pada script di bawah ini, kita akan melakukan splitting data **myData** dengan konfigurasi sebagai berikut:
+
+* Training set: 60%
+* Testing set: 40%
+
+```{r}
+library(caret)
+set.seed(1)
+
+#splitting data into training and test sets
+trainIndex <- createDataPartition(myData$X, p = 0.6)$Resample1
+
+trainingSet <- myData[trainIndex, ]
+testingSet <- myData[-trainIndex, ]
+
+trainingSet
+testingSet
+```
+
+Dapat dilihat bahwa sekarang dataset kita sudah terbagi menjadi dua bagian yaitu sebanyak 120 data (60%) sebagai training set dan sebanyak 80 data (40%) sebagai testing set. Kita dapat mengubah parameter *p* yang ada pada function *createDataPartition* untuk mengatur persentase banyaknya data yang akan menjadi training set.
+
+Pada saat pembentukan model, proses sampling data (pemilihan data untuk menjadi bagian training set) yang hanya satu kali saja seringkali dapat menghasilkan *generalization performance* atau prediksi performansi model yang kurang sesuai. Oleh karena itu, untuk memperbaikinya maka dikenalkan teknik resampling menggunakan **Cross Validation**.
+
+
+### <span style="color: green;">**Cross Validation**</span>
+Ada beberapa jenis resampling methods yang akan kita coba di sini: 
+
+* k-fold cross validation, 
+* repeated k-fold cross validation, dan 
+* item leave-one-out-validation atau LOOV.
+
+**Load data**. Kita akan menggunakan sebuah data set (download di classroom). Letakkan file data set (hsbdemo2.txt) pada folder yang sama dengan di mana kita meletakaan R script. Load data set tersebut dengan script di bawah ini. Amati tipe dan sebaran tiap-tiap variabel.
+
+```{r load_data, results="hide", attr.source = ".numberLines"}
+myData <- read.csv(file="hsbdemo2.txt", header = TRUE)
+summary(myData)
+```
+
+#### K-Fold Cross Validation
+Pada K-Fold Cross Validation, kita akan membagi training set kita menjadi *k* fold/partisi/bagian. Salah satu partisinya akan kita gunakan sebagai validation set.
+Ilustrasinya sebagai berikut:
+![Gambar 2. Ilustrasi K-Fold Cross Validation](https://scikit-learn.org/stable/_images/grid_search_cross_validation.png)
+
+Pada ilustrasi di Gambar 2, nilai *k=5*. Fold yang berwarna biru merupakan fold yang digunakan sebagai validation set. Di setiap iterasi, bagian data yang menjadi validation set akan diganti. Setelah 5 iterasi, semua data di training set pernah menjadi data validasi.
+
+Di bawah ini kita akan melakukan K-fold cross validation dengan *k=10*, berdasarkan data set (hsbdemo2.txt) yang dijelaskan di atas, menggunakan Naive Bayes classifier. 
+
+```{r naive_bayes, results="hide", warning = FALSE, message=FALSE, attr.source = ".numberLines"}
+library(caret)
+train_control <- trainControl(method="cv", number=10)
+
+modelNB <- train(prog ~ ses + female, method = "nb", trControl = train_control, data = myData)
+
+modelNB$resample
+confusionMatrix(modelNB)
+
+```
+
+Di sini kita menggunakan paket *caret*.
+Secara spesifik, pada baris ke-2, kita mengatur metode resampling yang dipakai, yaitu, cross validation dengan 10 fold. Di baris ke-4, kita melakukan klasifikasi berdasarkan variabel *ses* dan *female*, ke dalam tiga kelas *prog*, menggunakan Naive Bayes classifier ("nb"). Baris ke-6 memberikan kita nilai akurasi yang diperoleh ketika setiap fold/subset data dijadikan test set. Baris ke-7 memberikan nilai rata-rata akurasi dari 10 fold. 
+
+**Confussion Matrix**
+Pada kode di atas, kita juga menampilkan **confussion matrix** dari hasil training menggunakan Naive Bayes classifier. Confussion matrix dapat membantu kita memahami hasil dari model yang kita buat.
+Contoh ilustrasi sederhana dari confussion matrix sebagai berikut:
+![Gambar 3. Ilustrasi Confussion Matrix](https://miro.medium.com/max/500/1*yH2SM0DIUQlEiveK42NnBg.png)
+
+Pada Gambar 3, terdapat tiga kelas data yang akan diprediksi, yaitu: Mango, Orange, dan Apple. Confussion matrix tersebut menunjukkan bahwa:
+
+* Dari total 24 data yang diprediksi sebagai Apple, hanya 7 data saja yang memang benar adalah Apple, 8 data lainnya seharusnya Orange, dan 9 data lainnya seharusnya Mango.
+* Dari total 6 data yang diprediksi sebagai Orange, hanya 2 data saja yang memang benar adalah Orange.
+* Dari total 6 data yang diprediksi sebagai Mango, hanya 1 data saja yang memang benar adalah Mango.
+
+
+Jika kita kembali ke confussion matrix dari percobaan kita menggunakan data set (hsbdemo2.txt) dan Naive Bayes classifier, maka dapat kita ketahui bahwa dari semua data yang diprediksi sebagai kelas *academic*, ternyata hanya *52.5%* saja yang memang benar kelas *academic*. Sebanyak *22.5%* data seharusnya kelasnya *general* dan *25%* data seharusnya kelasnya *vocation*.
+
+
+#### Repeated K-Fold Cross Validation
+Metode ini, seperti dari namanya *repeated*, melakukan K-Fold Cross Validation berulang kali sebanyak repetisi yang kita atur. Sebagai contoh, kita melakukan 10-fold validation sebanyak 5 kali.
+
+```{r repeated, results="hide", warning = FALSE, message=FALSE, attr.source = ".numberLines"}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=5)
+
+modelNB <- train(prog ~ ses + female, method = "nb",
+                 trControl = train_control, data = myData)
+
+modelNB$resample
+confusionMatrix(modelNB)
+```
+Jika kita jalankan baris ke-6, kita akan melihat akurasi dari 50 kali klasifikasi. Ini didapat dari 10 fold dikalikan 5 kali repetisi.
+
+#### Leave-One-Out cross validation (LOOCV)
+
+```{r loov, warning = FALSE, message=FALSE, attr.source = ".numberLines", results="hide"}
+train_control <- trainControl(method="LOOCV")
+
+modelNB <- train(prog ~ ses + female, method = "nb",
+                 trControl = train_control, data = myData)
+
+modelNB$results
+```
+Ketika kita menggunakan LOOCV, kita tidak dapat melihat akurasi setiap fold; karena tidak ada fold. 
+
+Baris ke-6 memberikan rata-rata akurasi pada dua kondisi (*useKernel=FALSE* dan *useKernel=TRUE*). Untuk saat ini kita gunakan hasil ketika *useKernel=TRUE*.
+
+#### Exercise
+Cobalah ketiga metode di atas untuk melakukan klasifikasi pada data *iris*. Pada data ini terdapat variabel *Species* (kelas) dan variabel lainnya seperti *Sepal length*, *Sepal width*, *Petal length* dan *Petal width*. Klasifikasikan setiap spesies ke dalam kelas masing-masing, berdasarkan 4 variabel yang disebutkan di atas. Bandingkan akurasi ketika kita menggunakan 5-fold cross validation, repeated 5-fold cross validation sebanyak 10 kali, dan LOOCV.
+
+Untuk load data set *iris*, dapat dilakukan dengan script berikut.
+
+```{r, warning = FALSE, message=FALSE, attr.source = ".numberLines", results="hide"}
+data(iris)
+dataIris <- iris
+```
+
+
+### <span style="color: green;">**Underfitting & Overfitting**</span>
+Pada saat pemodelan, kita juga akan sering menggunakan istilah *underfitting* dan *overfitting*.
+
+#### Underfitting
+*Underfitting* merupakan kondisi di mana model kita menghasilkan akurasi yang buruk/rendah untuk data training. Sehingga dapat dikatakan bahwa model kita tidak representatif terhadap data latih yang kita miliki.
+
+#### Overfitting
+*Overfitting* merupakan kondisi di mana model kita terlalu fit terhadap data training, sehingga akurasinya sangat tinggi untuk data training. Namun, untuk data testing (data baru), akurasinya rendah.
+
+Baik *underfitting* maupun *overfitting*, keduanya merupakan kondisi yang tidak bagus. Pada saat membuat model, baik itu model regresi maupun model klasifikasi, kita harus berusaha agar model kita tidak *underfitting* dan juga tidak *overfitting*.
+
+Ilustrasi dari keduanya pada kasus regresi dapat kita lihat pada Gambar 4 berikut ini.
+![Gambar 4. Ilustrasi Underfitting dan Overfitting](https://miro.medium.com/max/700/1*_7OPgojau8hkiPUiHoGK_w.png)
+
+*~~ End of Tutorial ~~*

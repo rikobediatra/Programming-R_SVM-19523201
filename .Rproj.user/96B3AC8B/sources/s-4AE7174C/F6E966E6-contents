@@ -1,0 +1,233 @@
+---
+title: "13. SVM with R"
+author: "FSD team"
+output:
+  html_document:
+    df_print: paged
+    highlight: tango
+---
+
+Tutorial ini adalah bagian dari mata kuliah Fundamen Sains Data, Informatika, UII.
+Pada Pertemuan 13, kita akan mencoba mengaplikasikan SVM ke dalam R Code.
+
+
+
+-----
+### <span style="color: green;">**I. When the data are linearly separable**</span>
+Pertama, kita akan mencoba SVM pada data dengan **dua kelas** yang dapat dipisahkan secara **linear**. Kali ini, *data set* yang akan digunakan, kita buat sendiri dengan fungsi membangkitkan bilangan secara <span style="color: orange;">**random**</span> dan terdistribusi <span style="color: orange;">**normal**</span>.
+
+1. Sebelum bilangan random dibangkitkan, kita `set` dulu `seed`-nya. Tujuannya agar saat bilangan random tersebut kita bangkit lagi di lain waktu, kita mendapatkan bilangan yang sama dengan sebelumnya.
+```{r}
+set.seed(10111)
+```
+Nilai parameter di method `seed()` bebas, yang penting saat bilangan random tersebut kita bangkit lagi di lain waktu, nilai parameternya harus sama jika diinginkan mendapatkan bilangan yang sama dengan sebelumnya.
+
+2. Empat puluh bilangan <span style="color: orange;">**random**</span> yang terdistribusi <span style="color: orange;">**random**</span> dibangkitkan menggunakan `rnorm()`. Bilangan-bilangan yang telah dibangkitkan tersebut akan dimasukkan ke dalam matrix dengan ukuran 20 baris dan 2 kolom.
+```{r}
+x <-  matrix(rnorm(40), 20, 2)
+x
+```
+Dua puluh baris dan 2 kolom merepresentasikan: *20 data point* atau *20 sampel* (banyaknya data) dengan *dua variabel* **x1** dan **x2**. Misal: **x1** adalah ukuran kadar gula darah seseorang dan **x2** adalah banyak gula yang dikonsumsi seseorang, yang nilainya telah dinormalisasi. Sehingga kita memiliki **data set** yang berukuran 20x2.
+
+3. Buat kelas/label (**y**) untuk 20 data point tersebut. Kita asumsikan bahwa 10 data point awal adalah kelas <span style="color: blue;">**Diabetes**</span> dengan simbol (<span style="color: blue;">**+1**</span>) dan 10 data point terakhir adalah kelas <span style="color: red;">**Tidak Diabetes**</span> dengan simbol (<span style="color: red;">**-1**</span>). Dua puluh data point tersebut dibuat dengan method *replicate* `rep()`. Parameter pertama menyatakan data yang ingin di*replicate* sedangkan parameter kedua menyatakan berapa kali data di parameter pertama ingin di*replicate* 
+```{r}
+y <-  factor(rep(c(-1, 1), c(10, 10)))
+y
+```
+Perintah `rep()` tersebut bisa juga ditulis `rep(c(-1, 1), each=10)`. Perintah `factor()` digunakan agar nilai (<span style="color: blue;">**+1**</span>) dan (<span style="color: red;">**-1**</span>) menjadi kategori.
+
+4. Variabel x1 dan x2 pada data set yang termasuk kelas y=1 ditambah 3.
+```{r}
+x[y == 1, ] <- x[y == 1, ] + 3
+x
+```
+Penjumlahan dengan angka 3 di sini hanya bertujuan untuk memperbesar perbedaan data antara data point di kelas y=(+1) dan y=(-1). Buka kembali catatan teman-teman terkait pengaksesan elemen matriks untuk memahami code di atas.
+
+5. Variabel **x1**, **x2**, dan **y** disatukan ke dalam satu `data frame`. **Data frame** berfungsi untuk menggabungkan beberapa variabel seperti bentuk tabel. Data frame adalah struktur data yang sering digunakan di pemodelan dengan R.
+```{r}
+myData <- data.frame(x,y)
+head(myData)
+```
+
+6. Setiap kolom dari data frame `myData` diberi nama.
+```{r, generate data}
+colnames(myData) <- c("kadarGula", "konsumsiGula", "Diabetes")
+head(myData)
+```
+
+7. Plot data `myData`. Axis x untuk variabel **x2** atau **konsumsi gula**. Axis y untuk variabel **x1** atau **kadar gula**. Data point yang termasuk kelas (<span style="color: blue;">**+1**</span>) akan diberi warna <span style="color: blue;">**biru**</span>. Sedangkan, data point yang termasuk kelas (<span style="color: red;">**-1**</span>) akan diberi warna <span style="color: red;">**merah**</span>
+```{r}
+plot(myData$konsumsiGula,myData$kadarGula, col = ifelse(y=="1", "blue", "red"), pch = 19)
+``` 
+
+Dapat kita lihat, data point pada dua kelas di atas cukup terpisah, sehingga dapat dipisahkan secara linear (*linearly separable*).
+
+
+
+-----
+### <span style="color: green;">**Contoh 1**</span>
+Data point-data point di data set `myData` coba kita kelompokkan menggunakan SVM tanpa membagi data menjadi <span style="color: #c542f5;">**training data**</span> dan <span style="color: #c542f5;">**test data**</span>. 
+
+1. Algoritma SVM terlebih dahulu kita ambil dari package **e1071** dengan perintah 
+```{r}
+library(e1071)
+```
+Jika package **e1071** tidak ditemukan, install dulu package **e1071** dengan perintah `install.packages("e1071")`. Dokumentasi dari package **e1071** dapat dilihat di [**sini**](rdocumentation.org/packages/e1071/versions/1.7-4).
+
+2. Membangun model klasifikasi (*training*) untuk data point di `myData` menggunakan SVM dengan memanggil fungsi `svm()`. 
+```{r, svmVis, warning = FALSE,message=FALSE}
+modelSVM1 <- svm(Diabetes ~ ., data = myData, kernel = "linear")
+```
+Parameter pertama, jika berisi suatu `factor`, maka `factor` tersebut akan menjadi acuan dalam membangun model (`fit`). Parameter kedua adalah data yang bertipe data frame dan berisi variabel-variabel yang akan diklasifikasikan. Parameter ketiga untuk mendeskripsikan kernel yang akan digunakan.
+
+3. Untuk melihat hasil pemodelan SVM dapat kita print nilai dari `modelSVM1`
+```{r}
+print(modelSVM1)
+```
+Berdasarkan hasil komputasi di atas, terlihat ada 3 support vector yang ditemukan.
+
+4. Hasil pemodelan SVM terhadap data pointnya dan *hyperplane* pemisah antar 2 kelas coba divisualisasikan menggunakan `plot`
+```{r, plotSVM}
+plot(modelSVM1, myData)
+```
+
+Pada plot di atas, *support vector* ditunjukkan dengan simbol **"x"** dan data point yang lain dengan simbol **"o"**. Pada plot tersebut warna **merah** pada simbol **"x"** dan simbol **"o"** menunjukkan bahwa dia masuk kelas (<span style="color: blue;">**+1**</span>), sedangkan warna **hitam** pada simbol **"x"** dan simbol **"o"** menunjukkan bahwa dia masuk kelas (<span style="color: red;">**-1**</span>).
+Terlihat, kelas y=(<span style="color: blue;">**+1**</span>) memiliki 2 *support vector* dan kelas y=(<span style="color: red;">**-1**</span>) memiliki 1 *support vector*.
+
+
+
+*****
+### <span style="color: green;">**Contoh 2**</span>
+Pada contoh ini, data point-data point di data set `myData` coba kita kelompokkan menggunakan SVM dengan membagi data menjadi <span style="color: #c542f5;">**training data**</span> dan <span style="color: #c542f5;">**test data**</span>. Pembagian data tersebut menggunakan **cross validation**. Di contoh ini data akan dibagi ke dalam 5 lipatan atau **5-fold cross validation**.
+
+Gambar 1 menunjukkan ilustrasi **5-fold cross validation**. Misal data set kita memiliki 100 data point. Seratus data point tersebut dibagi 5 (karena yang diminta 5 lipatan). Jadi ada 5 lipatan lipatan 1, lipatan 2, lipatan 3, lipatan 4, dan lipatan 5. Masing-masing lipatan berisi 20 data point. Karena ada 5 lipatan, maka akan ada 5 kali *training* juga.
+Salah satu dari lima lipatan tersebut akan bergantian menjadi  <span style="color: #c542f5;">**test data**</span> dan sisanya menjadi  <span style="color: #c542f5;">**training data**</span> di setiap *training*-nya.
+
+![Gambar 1. 5-fold cross validation](https://cdn-images-1.medium.com/max/1000/1*NyvaFiG_jXcGgOaouumYJQ.jpeg)
+     
+     
+1. Package **caret** dipanggil untuk mengambil fungsi `trainControl()` yang akan membantu dalam proses **cross validation**.
+```{r}
+library(caret)
+```
+Jika package **caret** tidak ditemukan, install dulu package **caret** dengan perintah `install.packages("caret")`. Dokumentasi dari package **caret** dapat dilihat di [**sini**](https://www.rdocumentation.org/packages/caret/versions/6.0-86).
+
+2. Sebelum pembagian data point dilakukan, kita `set` dulu `seed`-nya.
+```{r}
+set.seed(132)
+```
+
+3. Pembagian data menjadi <span style="color: #c542f5;">**training data**</span> dan <span style="color: #c542f5;">**test data**</span> ke dalam 5 lipatan atau **5-fold cross validation** dengan menggunakan fungsi `trainControl()`
+```{r}
+train_control <- trainControl(method="cv", number=5)
+```
+
+4. Model klasifikasi untuk data point di `myData` yang telah dibagi ke <span style="color: #c542f5;">**training data**</span> dan <span style="color: #c542f5;">**test data**</span> dibangun menggunakan SVM. Berbeda dengan sebelumnya, kali ini model dibangun menggunakan fungsi `train()` dari package **caret**.
+```{r}
+modelSVM2 <- train(Diabetes ~., data = myData, method = "svmLinear", trControl = train_control)
+```
+
+5. Akurasi di setiap *fold* dari proses *training* di atas dilihat dengan
+```{r, svmCrossVal, warning=FALSE, message=FALSE}
+modelSVM2$resample
+```
+Dari hasil di atas dapat dilihat bahwa akurasi yang dapat dicapai di setiap *fold* adalah 1 (100% benar dalam memprediksi kelas dalam setiap test set). 
+
+6. Untuk melihat rata-rata akurasi dan confusion matrix dari model tersebut dijalankan perintah berikut
+```{r, svmCrossVal2}
+confusionMatrix(modelSVM2)
+```
+Dari hasil di atas dapat dilihat bahwa 50 data point dari kelas (<span style="color: red;">**-1**</span>) dapat diklasifikasikan dengan tepat ke kelas (<span style="color: red;">**-1**</span>). Begitu pula, 50 data point dari kelas (<span style="color: blue;">**+1**</span>) dapat diklasifikasikan dengan tepat ke kelas (<span style="color: blue;">**+1**</span>).
+
+
+
+-----
+### <span style="color: green;">**II. When the data are NOT linearly separable**</span>
+Kedua, kita akan mencoba SVM pada data dengan **dua kelas** yang tidak dapat dipisahkan secara **linear**. Kali ini, *data set* yang akan digunakan, kita buat sendiri berdasarkan tutorial di [sini](https://www4.stat.ncsu.edu/~reich/BigData/code/SVM.html)).
+
+1. Sebelum bilangan random dibangkitkan, kita `set` dulu `seed`-nya. Tujuannya agar saat bilangan random tersebut kita bangkit lagi di lain waktu, kita mendapatkan bilangan yang sama dengan sebelumnya.
+```{r}
+set.seed(143)
+```
+
+2. Mendeskripsikan variabel n untuk menyatakan jumlah data point, yaitu 1000
+```{r}
+n <- 1000
+```
+
+3. Membangkitkan 1000 data secara <span style="color: orange;">**random**</span> dan terdistribusi <span style="color: orange;">**Uniform**</span> menggunakan fungsi `runif()`. Seribu data random tersebut dibangkitkan 2 kali, sebagai variabel **x1** dan **x2**. Kemudian dua varibel tersebut digabung menjadi 1 matrix menggunakan fungsi `cbind()`. 
+```{r}
+x <- cbind(runif(n),runif(n))
+```
+
+4. Membangkitkan 1000 data lagi secara <span style="color: orange;">**random**</span> dan terdistribusi <span style="color: orange;">**binomial**</span> untuk variabel **y** atau kelas/label. Seribu data tersebut hanya memiliki nilai (<span style="color: blue;">**+1**</span>) dan (<span style="color: red;">**-1**</span>). Kita asumsikan kelas <span style="color: blue;">**Diabetes**</span> dengan simbol (<span style="color: blue;">**+1**</span>) dan kelas <span style="color: red;">**Tidak Diabetes**</span> dengan simbol (<span style="color: red;">**-1**</span>). 
+```{r}
+eta  <- x[,2] - sin(10*x[,1])
+prob <- 1/(1+exp(-5*eta))
+y    <- 2*rbinom(n, 1, prob)-1
+y  <- as.factor(y)
+```
+
+5. Variabel **x1**, **x2**, dan **y** disatukan ke dalam satu `data frame` dengan nama `myData2`.
+```{r}
+myData2 <- data.frame(x,y)
+```
+
+6. Setiap kolom dari data frame `myData2` diberi nama.
+```{r}
+colnames(myData2) <- c("kadarGula", "konsumsiGula", "Diabetes")
+head(myData2)
+```
+
+7. Plot data set `myData2`. Axis x untuk variabel **x2** atau **konsumsi gula**. Axis y untuk variabel **x1** atau **kadar gula**.. Data point yang termasuk kelas (<span style="color: blue;">**+1**</span>) akan diberi warna <span style="color: blue;">**biru**</span>. Sedangkan, data point yang termasuk kelas (<span style="color: red;">**-1**</span>) akan diberi warna <span style="color: red;">**merah**</span>
+```{r}
+plot(myData2$konsumsiGula,myData2$kadarGula, col = ifelse(y=="1", "blue", "red"), pch = 19)
+legend("topright", c("Y=1","Y=-1"),pch=19,col=c("blue", "red"), inset=0.05, bg=gray(1), cex=1.5)
+``` 
+
+Dapat kita lihat, data point pada dua kelas di atas bercampur, sehingga tidak dapat dipisahkan secara linear (*not linearly separable*).
+
+
+******
+### <span style="color: green;">**Contoh 3**</span>
+Pada Contoh 3 ini, kita lakukan langkah yang sama dengan Contoh 1. Bedanya hanya data set yang digunakan pada Contoh 3 adalah `myData2` dan *kernel* yang digunakan pada SVM adalah **radial basis**.
+1. Membangun model klasifikasi untuk data point di `myData2` menggunakan SVM
+```{r}
+library(e1071)
+# set.seed(453)
+modelSVM3 <-  svm(Diabetes ~ ., data = myData2, kernel = "radial")
+print(modelSVM3)
+```
+Berdasarkan hasil komputasi di atas, terlihat ada 524 support vector yang ditemukan.
+
+2. Hasil pemodelan SVM terhadap data pointnya dan *hyperplane* pemisah antar 2 kelas coba divisualisasikan menggunakan `plot`
+```{r}
+plot(modelSVM3, myData2)
+```
+
+Pada plot di atas, *support vector* ditunjukkan dengan simbol **"x"** dan data point yang lain dengan simbol **"o"**. Pada plot tersebut warna **merah** pada simbol **"x"** dan simbol **"o"** menunjukkan bahwa dia masuk kelas (<span style="color: blue;">**+1**</span>), sedangkan warna **hitam** pada simbol **"x"** dan simbol **"o"** menunjukkan bahwa dia masuk kelas (<span style="color: red;">**-1**</span>).
+Terlihat, ada potensi misklasifikasi di plot tersebut.
+
+
+-----
+### <span style="color: green;">**Contoh 4**</span>
+Pada Contoh 4 ini, kita lakukan langkah yang sama dengan Contoh 2. Bedanya hanya data set yang digunakan pada Contoh 4 adalah `myData2`, *kernel* yang digunakan pada SVM adalah **radial basis**, dan jumlah lipatan yang pada *cross validation* adalah 10 atau **10-fold cross validation**.
+
+1. Membangun model klasifikasi untuk data point di `myData2` menggunakan SVM
+```{r}
+library(caret)
+set.seed(543)
+train_control2 <- trainControl(method="cv", number=10)
+modelSVM4 <- train(Diabetes ~., data = myData2, method = "svmRadial", trControl = train_control2)
+modelSVM4$resample
+```
+
+Dari hasil di atas dapat dilihat bahwa akurasi yang dapat dicapai di setiap *fold* sekitar 0.8 (kurang lebih 80% benar dalam memprediksi kelas dalam setiap test set). 
+
+2. Untuk melihat rata-rata akurasi dan confusion matrix dari model tersebut dijalankan perintah berikut
+```{r}
+confusionMatrix(modelSVM4)
+```
+Dari hasil di atas dapat dilihat bahwa rata-rata akurasi sebesar 0.84. Untuk perhitungan hasil rata-rata TPR, FPR, TNR, FNR dari confusion matrix berdasarkan 10 fold di atas dapat dihitung menggunakan panduan [di sini](https://www.dataschool.io/simple-guide-to-confusion-matrix-terminology/).
+
+~Terima Kasih ~

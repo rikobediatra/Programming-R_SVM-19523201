@@ -1,0 +1,49 @@
+---
+title: "SVM"
+output: html_notebook
+---
+
+## Menggunanakan data Pima Indians Diabetes 2 dari library mlbench
+## dengan terdapat 768 data dan 9 variabel
+## mengambil variabel age dan pedigree karna kedua variabel tidak terdapat NA
+```{r}
+data("PimaIndiansDiabetes2")
+head(PimaIndiansDiabetes2)
+dim(PimaIndiansDiabetes2)
+
+newData <- subset(PimaIndiansDiabetes2, select = c(age, pedigree, diabetes))
+newData
+```
+
+## mengambil data diabetes dan membentuk kedalam 2 model
+## data train dan test dengan perbandingan 75:25
+```{r}
+library(caret)
+set.seed(12345)
+intrain <- createDataPartition(y = newData$diabetes, p = 0.75, list = FALSE)
+training <- newData[intrain, ]
+dim(training)
+testing <- newData[-intrain, ]
+dim(testing)
+summary(newData)
+```
+
+## membuat data diabetes menjadi data faktor
+## Melakukan analisis klasifikasi menggunakan metode SVM dengan variabel           dependennya adalah Diabetes dan menggunakan data train
+```{r}
+training[["diabetes"]] = factor(training[["diabetes"]])
+train_control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+data_train <- train(diabetes ~., data = training, method = "svmLinear",
+                  trcontrol = train_control,
+                  preProcess = c("center", "scale"),
+                  tuneLength = 10)
+data_train
+
+library(e1071)
+data_svm <- svm(factor(diabetes) ~., data = training, probability=T)
+data_svm
+
+plot(data_svm, newData)
+```
+

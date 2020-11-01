@@ -1,0 +1,23 @@
+"0","```r
+
+#a) 
+A <- matrix( c( 1,2,3,4,5,6,7,8,9), 3, 3, TRUE)
+colnames(A) <- c('col1','col2','col3')
+rownames(A) <- c('row1','row2','row3')
+A
+
+#b)
+diag(A)
+
+#c)
+det(A)
+
+#d)
+solve(A)
+
+#e)
+t(A) %*% A
+
+#f)
+eigen(A)
+```"

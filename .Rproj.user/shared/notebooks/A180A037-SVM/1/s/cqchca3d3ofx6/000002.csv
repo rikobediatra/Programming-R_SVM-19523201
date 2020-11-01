@@ -1,0 +1,2 @@
+"0","set.seed(12345)"
+"0","sample = sample(seq_len(nrow(newData)), size = n)"
